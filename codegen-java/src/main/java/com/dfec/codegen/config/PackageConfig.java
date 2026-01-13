@@ -27,14 +27,14 @@ public class PackageConfig {
     private String mapperXml = "mapper.xml";
 
     public String getModulePackage() {
-        if (module == null  || module.isEmpty()) {
+        if (module == null || module.isEmpty()) {
             return basePackage;
         }
         return String.format("%s.%s", basePackage, module);
     }
 
     public String getCommonPackage(String subPackage, String defaultValue) {
-        if (subPackage == null  || subPackage.isEmpty()) {
+        if (subPackage == null || subPackage.isEmpty()) {
             return String.format("%s.%s", getModulePackage(), defaultValue);
         }
         return String.format("%s.%s", getModulePackage(), subPackage);

@@ -2,6 +2,9 @@ package com.dfec.codegen.attributes;
 
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author zhangth
@@ -25,6 +28,11 @@ public class AnnotationAttributes {
      */
     private String values;
 
+    /**
+     * 额外的导入
+     */
+    private List<String> additionalImports;
+
     public AnnotationAttributes(String name, String className) {
         this.name = name;
         this.className = className;
@@ -40,6 +48,13 @@ public class AnnotationAttributes {
         if (values == null || values.isEmpty()) {
             return "@" + name;
         }
-        return String.format("@%s(%s)",  name, values);
+        return String.format("@%s(%s)", name, values);
+    }
+
+    public void addAdditionalImport(String additionalImport) {
+        if (additionalImports == null) {
+            additionalImports = new ArrayList<>();
+        }
+        additionalImports.add(additionalImport);
     }
 }

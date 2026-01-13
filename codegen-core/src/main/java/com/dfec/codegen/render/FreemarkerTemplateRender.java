@@ -2,12 +2,13 @@ package com.dfec.codegen.render;
 
 import com.dfec.codegen.GenerationModel;
 import freemarker.cache.ByteArrayTemplateLoader;
-import freemarker.cache.TemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -19,7 +20,7 @@ public class FreemarkerTemplateRender implements TemplateRender {
 
     private FreemarkerConfiguration configuration;
 
-    public  FreemarkerTemplateRender(FreemarkerConfiguration configuration) {
+    public FreemarkerTemplateRender(FreemarkerConfiguration configuration) {
         this.configuration = configuration;
     }
 

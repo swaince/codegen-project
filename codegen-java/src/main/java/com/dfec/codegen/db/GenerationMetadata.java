@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.sql.DatabaseMetaData;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -14,9 +15,13 @@ import java.util.List;
 @Data
 public class GenerationMetadata {
 
-    DatabaseMetaData metadata;
+    private DatabaseMetaData metadata;
 
-    List<Table> tables;
+    private Set<String> keywords;
 
-    JavaGenerationConfig config;
+    private String identifierQuoteString;
+
+    private List<Table> tables;
+
+    private JavaGenerationConfig config;
 }

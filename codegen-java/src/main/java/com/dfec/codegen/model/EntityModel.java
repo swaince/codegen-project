@@ -2,9 +2,11 @@ package com.dfec.codegen.model;
 
 import com.dfec.codegen.GenerationModel;
 import com.dfec.codegen.db.Table;
+import com.dfec.codegen.po.JavaBeanProperty;
 import lombok.Data;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -46,20 +48,32 @@ public class EntityModel implements GenerationModel {
      */
     private Set<String> annotations = new TreeSet<>();
 
+    /**
+     * bean 属性列表
+     */
+    private List<JavaBeanProperty> properties;
 
-    public void addImportPackage(String packageName){
+    /**
+     * 输出目录
+     */
+    private String outputDir;
+
+
+    public void addImportPackage(String packageName) {
         this.imports.add(packageName);
     }
 
-    public void addImportPackages(String... packageNames){
+    public void addImportPackages(String... packageNames) {
         this.imports.addAll(Arrays.asList(packageNames));
     }
 
-    public void addAnnotation(String annotation){
+    public void addAnnotation(String annotation) {
         this.annotations.add(annotation);
     }
 
-    public void addAnnotations(String... annotations){
+    public void addAnnotations(String... annotations) {
         this.annotations.addAll(Arrays.asList(annotations));
     }
+
+
 }

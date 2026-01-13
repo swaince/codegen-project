@@ -1,7 +1,9 @@
 package com.dfec.codegen;
 
-import lombok.Builder;
+import com.dfec.codegen.db.GenerationMetadata;
 import lombok.Data;
+
+import java.util.Map;
 
 /**
  *
@@ -9,6 +11,9 @@ import lombok.Data;
  * @since 2026/1/10
  */
 @Data
-public class JavaGenerationResult implements GenerationResult{
+public class JavaGenerationResult implements GenerationResult {
 
+    private GenerationMetadata metadata;
+
+    private Map<String, JavaGenerationModel> models;
 }

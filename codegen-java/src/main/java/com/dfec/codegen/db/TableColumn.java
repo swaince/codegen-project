@@ -12,15 +12,17 @@ public class TableColumn {
 
     private String name;
 
+    private String tableName;
+
     private boolean primaryKey;
 
-    private Integer dataType;
+    private int dataType;
 
     private String typeName;
 
     private Integer length;
 
-    private Integer decimalDigits;
+    private Integer scale;
 
     private Integer numPrecRadix;
 

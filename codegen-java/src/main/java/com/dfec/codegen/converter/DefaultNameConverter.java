@@ -1,5 +1,7 @@
 package com.dfec.codegen.converter;
 
+import org.apache.commons.text.CaseUtils;
+
 /**
  *
  * @author zhangth
@@ -8,49 +10,48 @@ package com.dfec.codegen.converter;
 public class DefaultNameConverter implements NameConverter {
     @Override
     public String tableNameToEntityName(String tableName) {
-        if (tableName == null || tableName.trim().isEmpty()) {
-            return "";
-        }
-
-        // 处理下划线转驼峰
-        StringBuilder entityName = new StringBuilder();
-        boolean toUpper = true;
-
-        for (char c : tableName.toCharArray()) {
-            if (c == '_') {
-                toUpper = true;
-            } else {
-                if (toUpper) {
-                    entityName.append(Character.toUpperCase(c));
-                    toUpper = false;
-                } else {
-                    entityName.append(Character.toLowerCase(c));
-                }
-            }
-        }
-
-        // 确保首字母大写
-        if (entityName.length() > 0) {
-            char firstChar = entityName.charAt(0);
-            if (!Character.isUpperCase(firstChar)) {
-                entityName.setCharAt(0, Character.toUpperCase(firstChar));
-            }
-        }
-        return entityName.toString();
+        return CaseUtils.toCamelCase(tableName, true, '_');
     }
 
     @Override
     public String columnNameToFieldName(String columnName) {
-        return "";
+        return CaseUtils.toCamelCase(columnName, false, '_');
     }
 
     @Override
-    public String columnNameToGetterName(String columnName) {
-        return "";
+    public String columnNameToGetterName(String columnName, Class<?> clazz) {
+        String getPrefix = "get";
+        String property = getBeanName(columnName);
+        if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
+            getPrefix = "is";
+        }
+        return getPrefix + property;
     }
 
     @Override
     public String columnNameToSetterName(String columnName) {
-        return "";
+        String property = getBeanName(columnName);
+        return "set" + property;
+    }
+
+    public static String getBeanName(String propertyName) {
+
+        if (isLowerCase(propertyName, 0) && isUpperCase(propertyName, 1)) {
+            // vPid -> getvPid
+            return propertyName;
+        } else if (isUpperCase(propertyName, 0) && isLowerCase(propertyName, 1)) {
+            // Vpid -> getVpid
+            return propertyName;
+        } else {
+            return propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        }
+    }
+
+    public static boolean isLowerCase(String string, int index) {
+        return Character.isLowerCase(string.charAt(index));
+    }
+
+    public static boolean isUpperCase(String string, int index) {
+        return Character.isUpperCase(string.charAt(index));
     }
 }

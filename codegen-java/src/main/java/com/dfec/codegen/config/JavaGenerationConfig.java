@@ -1,7 +1,6 @@
 package com.dfec.codegen.config;
 
 import com.dfec.codegen.GenerationConfig;
-import jdk.nashorn.internal.objects.Global;
 import lombok.Builder;
 import lombok.Data;
 
@@ -20,6 +19,12 @@ public class JavaGenerationConfig implements GenerationConfig {
      * 作者
      */
     private String author;
+
+    /**
+     * 生成的基础路径
+     */
+    @Builder.Default
+    private String base = System.getProperty("user.dir");
 
     /**
      * 数据库配置

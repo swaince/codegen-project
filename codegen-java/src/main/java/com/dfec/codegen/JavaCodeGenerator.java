@@ -6,14 +6,23 @@ import com.dfec.codegen.db.DefaultGenerationMetadataQuery;
 import com.dfec.codegen.db.GenerationMetadata;
 import com.dfec.codegen.db.GenerationMetadataQuery;
 import com.dfec.codegen.db.Table;
+import com.dfec.codegen.loader.ClassLoaderTemplateLoader;
+import com.dfec.codegen.loader.TemplateLoader;
 import com.dfec.codegen.model.EntityModel;
 import com.dfec.codegen.model.MapperModel;
 import com.dfec.codegen.model.MapperXmlModel;
+import com.dfec.codegen.render.FreemarkerConfiguration;
+import com.dfec.codegen.render.FreemarkerTemplateRender;
+import com.dfec.codegen.render.TemplateRender;
 import com.dfec.codegen.resolver.EntityModelResolver;
 import com.dfec.codegen.resolver.MapperModelResolver;
 import com.dfec.codegen.resolver.MapperXmlModelResolver;
+import com.dfec.codegen.writer.CodeWriter;
+import com.dfec.codegen.writer.DefaultCodeWriter;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -21,12 +30,16 @@ import java.util.stream.Collectors;
  * @author zhangth
  * @since 2026/1/10
  */
-public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfig>{
+public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfig> {
 
 
-    private EntityModelResolver entityResolver = new  EntityModelResolver();
-    private MapperModelResolver mapperResolver = new  MapperModelResolver();
-    private MapperXmlModelResolver mapperXmlResolver = new  MapperXmlModelResolver();
+    private final EntityModelResolver entityResolver = new EntityModelResolver();
+    private final MapperModelResolver mapperResolver = new MapperModelResolver();
+    private final MapperXmlModelResolver mapperXmlResolver = new MapperXmlModelResolver();
+
+    private final TemplateLoader loader = new ClassLoaderTemplateLoader();
+    private final TemplateRender render = new FreemarkerTemplateRender(new FreemarkerConfiguration());
+    private final CodeWriter writer = new DefaultCodeWriter();
 
     @Override
     public boolean support(GenerationConfig config) {
@@ -42,31 +55,53 @@ public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfi
         }
 
         GenerationMetadata metadata = metadataQuery.query();
-         metadata.setConfig(config);
-        JavaGenerationModel model = metadataToJavaModel(metadata);
+        metadata.setConfig(config);
+        List<JavaGenerationModel> models = metadataToJavaModel(metadata);
 
-        return javaModelToGenerationResult(model);
+        return javaModelToGenerationResult(models, metadata);
     }
 
-    public JavaGenerationModel metadataToJavaModel(GenerationMetadata metadata) {
-        JavaGenerationModel model = new JavaGenerationModel();
-
-        model.setMetadata(metadata);
+    public List<JavaGenerationModel> metadataToJavaModel(GenerationMetadata metadata) {
 
         List<Table> tables = metadata.getTables();
-        List<EntityModel> models = tables.stream().map(table -> {
-            EntityModel entityModel = entityResolver.resolve(metadata, table);
-            MapperModel mapperModel = mapperResolver.resolve(metadata, table);
-            MapperXmlModel mapperXmlModel = mapperXmlResolver.resolve(metadata, table);
-            return entityModel;
-        }).collect(Collectors.toList());
+        return tables.stream().map(table -> {
+            JavaGenerationModel model = new JavaGenerationModel();
+            model.setTable(table);
+            model.setTableName(table.getName());
+            model.setMetadata(metadata);
 
-        return model;
+            EntityModel entity = entityResolver.resolve(model, table);
+            model.setEntity(entity);
+            writeFile(model, "templates/java/entity.java.ftl");
+
+            MapperModel mapper = mapperResolver.resolve(model, table);
+            model.setMapper(mapper);
+
+            MapperXmlModel mapperXml = mapperXmlResolver.resolve(model, table);
+            model.setMapperXml(mapperXml);
+
+            model.setTable(table);
+            model.setTableName(table.getName());
+            return model;
+        }).collect(Collectors.toList());
     }
 
-    private JavaGenerationResult javaModelToGenerationResult(JavaGenerationModel model) {
+    private JavaGenerationResult javaModelToGenerationResult(List<JavaGenerationModel> models, GenerationMetadata metadata) {
         JavaGenerationResult result = new JavaGenerationResult();
-
+        result.setMetadata(metadata);
+        Map<String, JavaGenerationModel> modelMap = models.stream()
+                .collect(Collectors.toMap(JavaGenerationModel::getTableName, Function.identity()));
+        result.setModels(modelMap);
         return result;
+    }
+
+    private void writeFile(JavaGenerationModel model, String templatePath) {
+        try {
+            String template = loader.load(templatePath);
+            String code = render.render(template, model);
+            System.out.println(code);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

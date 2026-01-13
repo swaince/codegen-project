@@ -18,5 +18,7 @@ public class Table {
 
     private String remark;
 
-    List<TableColumn> columns;
+    private List<TableColumn> columns;
+
+    private List<TableColumn> primaryKeys;
 }

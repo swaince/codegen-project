@@ -9,6 +9,7 @@ public interface NameConverter {
 
     /**
      * 表名转实体名
+     *
      * @param tableName 表名
      * @return
      */
@@ -16,6 +17,7 @@ public interface NameConverter {
 
     /**
      * 列名转属性名
+     *
      * @param columnName 列名
      * @return
      */
@@ -23,13 +25,15 @@ public interface NameConverter {
 
     /**
      * 列名转 Getter 名
+     *
      * @param columnName 列名
      * @return
      */
-    String columnNameToGetterName(String columnName);
+    String columnNameToGetterName(String columnName, Class<?> clazz);
 
     /**
      * 列名转 Setter 名
+     *
      * @param columnName
      * @return
      */

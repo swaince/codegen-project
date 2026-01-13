@@ -3,8 +3,6 @@ package com.dfec.codegen.db;
 import com.dfec.codegen.config.DatabaseConfig;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  *
  * @author zhangth

@@ -8,9 +8,8 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -23,18 +22,20 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
 
     private DatabaseConfig config;
 
-    public  DefaultGenerationMetadataQuery(DatabaseConfig config) {
+    public DefaultGenerationMetadataQuery(DatabaseConfig config) {
         this.config = config;
     }
 
     @Override
     public GenerationMetadata query() {
 
-        try (Connection connection = getConnection()){
+        try (Connection connection = getConnection()) {
             GenerationMetadata result = new GenerationMetadata();
             DatabaseMetaData metadata = connection.getMetaData();
             result.setMetadata(metadata);
             result.setTables(getTables(connection));
+            result.setKeywords(getKeywords(metadata));
+            result.setIdentifierQuoteString(metadata.getIdentifierQuoteString());
             return result;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -94,17 +95,19 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
             if (primaryKeys.isEmpty()) {
                 LOGGER.warn("table[{}] not found primary key", table.getName());
             }
-
+            List<TableColumn> primaryKeyColumns = new LinkedList<>();
+            table.setPrimaryKeys(primaryKeyColumns);
             ResultSet rs = metadata.getColumns(catalog, schema, table.getName(), null);
             while (rs.next()) {
                 TableColumn column = new TableColumn();
                 String name = rs.getString("COLUMN_NAME");
                 column.setName(name);
+                column.setTableName(table.getName());
                 int dataType = rs.getInt("DATA_TYPE");
                 column.setDataType(dataType);
                 column.setTypeName(rs.getString("TYPE_NAME"));
                 column.setLength(rs.getInt("COLUMN_SIZE"));
-                column.setDecimalDigits(rs.getInt("DECIMAL_DIGITS"));
+                column.setScale(rs.getInt("DECIMAL_DIGITS"));
                 column.setNumPrecRadix(rs.getInt("NUM_PREC_RADIX"));
                 column.setNullable(rs.getInt("NULLABLE"));
                 column.setRemark(rs.getString("REMARKS"));
@@ -114,13 +117,24 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
 
                 if (primaryKeys.contains(name)) {
                     column.setPrimaryKey(true);
+                    primaryKeyColumns.add(column);
                 }
                 columns.add(column);
             }
             return columns;
         } catch (Exception e) {
-            throw new  RuntimeException(e);
+            throw new RuntimeException(e);
         }
 
+    }
+
+    private Set<String> getKeywords(DatabaseMetaData metadata) {
+        try {
+            String keywords = metadata.getSQLKeywords();
+
+            return Arrays.stream(keywords.split(",")).collect(Collectors.toSet());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
