@@ -57,7 +57,7 @@ public class EntityModelResolver implements ModelResolver<EntityModel> {
         entity.setProperties(properties);
         resolveAnnotations(metadata, table, entity);
 
-        String baseDir = getOutputDir(entityPackage, config.getBase());
+        String baseDir = getOutputDir(entityPackage, config.getBase(), entityName + ".java");
         entity.setOutputDir(baseDir);
 
         return entity;

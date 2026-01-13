@@ -55,7 +55,7 @@ public class MapperModelResolver implements ModelResolver<MapperModel> {
 
         result.addImportPackages(annotationImports);
 
-        String outputDir = getOutputDir(mapperPackage, config.getBase());
+        String outputDir = getOutputDir(mapperPackage, config.getBase(), result.getName() +".java");
         entity.setOutputDir(outputDir);
         return result;
     }

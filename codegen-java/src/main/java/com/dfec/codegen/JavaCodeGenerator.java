@@ -20,6 +20,7 @@ import com.dfec.codegen.resolver.MapperXmlModelResolver;
 import com.dfec.codegen.writer.CodeWriter;
 import com.dfec.codegen.writer.DefaultCodeWriter;
 
+import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -72,7 +73,7 @@ public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfi
 
             EntityModel entity = entityResolver.resolve(model, table);
             model.setEntity(entity);
-            writeFile(model, "templates/java/entity.java.ftl");
+            String code = getAndWriteCode(model, "templates/java/entity.java.ftl", entity.getOutputDir());
 
             MapperModel mapper = mapperResolver.resolve(model, table);
             model.setMapper(mapper);
@@ -95,11 +96,12 @@ public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfi
         return result;
     }
 
-    private void writeFile(JavaGenerationModel model, String templatePath) {
-        try {
+    private String getAndWriteCode(JavaGenerationModel model, String templatePath, String writePath) {
+        try (FileOutputStream outputStream = new FileOutputStream(writePath)){
             String template = loader.load(templatePath);
             String code = render.render(template, model);
-            System.out.println(code);
+            writer.write(code, outputStream);
+            return code;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

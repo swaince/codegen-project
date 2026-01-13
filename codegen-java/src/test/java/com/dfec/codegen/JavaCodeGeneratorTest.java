@@ -17,6 +17,8 @@ class JavaCodeGeneratorTest {
 
         config.setAuthor("zhangth");
         config
+                .setBase("E:\\CodeRepo\\Fanghub\\codegen-project");
+        config
                 .configureStrategy(builder -> {
                     builder
                             .useLombok(true)

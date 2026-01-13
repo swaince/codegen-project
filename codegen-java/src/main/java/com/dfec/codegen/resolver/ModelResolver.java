@@ -14,14 +14,8 @@ public interface ModelResolver<T> {
 
     T resolve(JavaGenerationModel model, Table table);
 
-    default String getOutputDir(String pkg, String base) {
+    default String getOutputDir(String base, String pkg, String filename) {
         String[] dirs = pkg.split("\\.");
-        String[] dirList = new String[dirs.length + 3];
-        dirList[0] = "src";
-        dirList[1] = "main";
-        dirList[2] = "java";
-        System.arraycopy(dirs, 0, dirList, 3, dirs.length);
-
-        return Paths.get(base, dirList).toString();
+        return Paths.get(base, "src").resolve("main").resolve(Paths.get("java", dirs)).resolve(filename).toString();
     }
 }
