@@ -36,4 +36,14 @@ public class FreemarkerTemplateRender implements TemplateRender {
         tpl.process(model, out);
         return out.toString();
     }
+
+    @Override
+    public String name() {
+        return "freemarker";
+    }
+
+    @Override
+    public String templateSuffix() {
+        return "ftl";
+    }
 }

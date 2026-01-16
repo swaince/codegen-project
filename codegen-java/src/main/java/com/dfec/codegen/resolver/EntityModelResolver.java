@@ -1,7 +1,9 @@
 package com.dfec.codegen.resolver;
 
 import com.dfec.codegen.JavaGenerationModel;
-import com.dfec.codegen.attributes.AnnotationAttributes;
+import com.dfec.codegen.Language;
+import com.dfec.codegen.attributes.AnnotationAttribute;
+import com.dfec.codegen.config.EntityConfig;
 import com.dfec.codegen.config.JavaGenerationConfig;
 import com.dfec.codegen.config.PackageConfig;
 import com.dfec.codegen.config.StrategyConfig;
@@ -14,12 +16,11 @@ import com.dfec.codegen.model.EntityModel;
 import com.dfec.codegen.po.JavaBeanProperty;
 import com.dfec.codegen.types.JavaClass;
 import com.dfec.codegen.types.TypeRegistry;
+import com.dfec.codegen.types.Types;
 import com.dfec.codegen.utils.StringUtils;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -57,26 +58,57 @@ public class EntityModelResolver implements ModelResolver<EntityModel> {
         entity.setProperties(properties);
         resolveAnnotations(metadata, table, entity);
 
-        String baseDir = getOutputDir(entityPackage, config.getBase(), entityName + ".java");
+        Language language = config.getLanguage();
+        String baseDir = getOutputDir(config.getBase(), entityPackage, language, entityName);
         entity.setOutputDir(baseDir);
+
+        // 整合自定义配置
+        setAdditionalProperties(entity, config);
 
         return entity;
     }
 
+    private static void setAdditionalProperties(EntityModel entity, JavaGenerationConfig config) {
+        StrategyConfig strategy = config.getStrategy();
+        entity.setAuthor(config.getAuthor());
+        SimpleDateFormat sdf = new SimpleDateFormat(config.getDateFormat());
+        entity.setDate(sdf.format(new Date()));
+        EntityConfig entityConfig = strategy.getEntity();
+        String superClass = entityConfig.getSuperClass();
+        if (superClass != null && !superClass.isEmpty()) {
+            JavaClass javaClass = new JavaClass(superClass);
+            entity.setSuperClass(javaClass.getName());
+            entity.addImportPackages(javaClass.getClassName());
+        }
+        entity.setSerializable(entityConfig.isSerializable());
+        if (entityConfig.isSerializable()) {
+            entity.addImportPackages("java.io.Serializable");
+        }
+        entity.setGeneric(entityConfig.isGeneric());
+        entity.setUseLombok(strategy.isUseLombok());
+    }
+
     private static String[] getFieldImportPackages(List<JavaBeanProperty> properties) {
         return properties.stream().flatMap(property -> {
-            List<AnnotationAttributes> annotations = property.getAnnotations();
+            List<String> result = new LinkedList<>();
+            if (property.getType() != null && property.getType().getClassName() != null) {
+                result.add(property.getType().getClassName());
+            }
+
+            List<AnnotationAttribute> annotations = property.getAnnotationAttributes();
             if (annotations == null) {
                 annotations = new ArrayList<>();
             }
-            return annotations.stream().flatMap(annotation -> {
-                List<String> result = new ArrayList<>();
-                result.add(annotation.getClassName());
+            Set<String> annotationImports = annotations.stream().flatMap(annotation -> {
+                List<String> importItems = new ArrayList<>();
+                importItems.add(annotation.getClassName());
                 if (annotation.getAdditionalImports() != null) {
-                    result.addAll(annotation.getAdditionalImports());
+                    importItems.addAll(annotation.getAdditionalImports());
                 }
-                return result.stream();
-            });
+                return importItems.stream();
+            }).collect(Collectors.toSet());
+            result.addAll(annotationImports);
+            return result.stream();
         }).distinct().toArray(String[]::new);
     }
 
@@ -98,16 +130,23 @@ public class EntityModelResolver implements ModelResolver<EntityModel> {
             property.setType(type);
             property.setGetterName(nameConverter.columnNameToGetterName(name, type.isBoolean() ? Boolean.class : type.getTypeClass()));
             property.setSetterName(nameConverter.columnNameToSetterName(name));
-            List<AnnotationAttributes> fieldAnnotations = getFieldAnnotations(metadata, column);
-            property.setAnnotations(fieldAnnotations);
+            List<AnnotationAttribute> fieldAnnotations = getFieldAnnotations(metadata, column);
+
+            Set<String> annotations = fieldAnnotations.stream().map(annotation -> annotation.getAnnotation()).collect(Collectors.toSet());
+            property.setAnnotationAttributes(fieldAnnotations);
+            property.setAnnotations(annotations);
             property.setRemark(column.getRemark());
             property.setColumn(column);
+            Types jdbcType = Types.getByType(column.getDataType());
+            if (jdbcType != null) {
+                property.setJdbcType(jdbcType.getName());
+            }
             return property;
         }).collect(Collectors.toList());
     }
 
     private void resolveAnnotations(GenerationMetadata metadata, Table table, EntityModel entity) {
-        List<AnnotationAttributes> classAnnotations = getClassAnnotations(metadata, table);
+        List<AnnotationAttribute> classAnnotations = getClassAnnotations(metadata, table);
         classAnnotations.forEach(annotation -> {
             entity.addAnnotation(annotation.getAnnotation());
             entity.addImportPackage(annotation.getClassName());
@@ -127,18 +166,18 @@ public class EntityModelResolver implements ModelResolver<EntityModel> {
      * @param table    表信息
      * @return
      */
-    private List<AnnotationAttributes> getClassAnnotations(GenerationMetadata metadata, Table table) {
-        List<AnnotationAttributes> annotations = new LinkedList<>();
+    private List<AnnotationAttribute> getClassAnnotations(GenerationMetadata metadata, Table table) {
+        List<AnnotationAttribute> annotations = new LinkedList<>();
 
         JavaGenerationConfig config = metadata.getConfig();
         StrategyConfig strategy = config.getStrategy();
         if (strategy.isUseLombok()) {
-            annotations.add(new AnnotationAttributes("Getter", "lombok.Getter"));
-            annotations.add(new AnnotationAttributes("Setter", "lombok.Setter"));
-            annotations.add(new AnnotationAttributes("Data", "lombok.Data"));
+            annotations.add(new AnnotationAttribute("Getter", "lombok.Getter"));
+            annotations.add(new AnnotationAttribute("Setter", "lombok.Setter"));
+            annotations.add(new AnnotationAttribute("Data", "lombok.Data"));
         }
         if (strategy.isUseMybatisPlus()) {
-            annotations.add(new AnnotationAttributes("TableName",
+            annotations.add(new AnnotationAttribute("TableName",
                     "com.baomidou.mybatisplus.annotation.TableName",
                     String.format("\"%s\"", table.getName())));
         }
@@ -152,8 +191,8 @@ public class EntityModelResolver implements ModelResolver<EntityModel> {
      * @param column   列信息
      * @return
      */
-    private List<AnnotationAttributes> getFieldAnnotations(GenerationMetadata metadata, TableColumn column) {
-        List<AnnotationAttributes> annotations = new LinkedList<>();
+    private List<AnnotationAttribute> getFieldAnnotations(GenerationMetadata metadata, TableColumn column) {
+        List<AnnotationAttribute> annotations = new LinkedList<>();
         JavaGenerationConfig config = metadata.getConfig();
         StrategyConfig strategy = config.getStrategy();
         if (!strategy.isUseMybatisPlus()) {
@@ -172,11 +211,11 @@ public class EntityModelResolver implements ModelResolver<EntityModel> {
 
         if (column.isPrimaryKey()) {
             String values = String.format("value = \"%s%s%s\", type = IdType.%s", quoteString, column.getName(), quoteString, strategy.getEntity().getIdType().getKey());
-            AnnotationAttributes tableId = new AnnotationAttributes("TableId", "com.baomidou.mybatisplus.annotation.TableId", values);
+            AnnotationAttribute tableId = new AnnotationAttribute("TableId", "com.baomidou.mybatisplus.annotation.TableId", values);
             tableId.addAdditionalImport("com.baomidou.mybatisplus.annotation.IdType");
             annotations.add(tableId);
         } else {
-            annotations.add(new AnnotationAttributes("TableField", "com.baomidou.mybatisplus.annotation.TableField",
+            annotations.add(new AnnotationAttribute("TableField", "com.baomidou.mybatisplus.annotation.TableField",
                     String.format("\"%s%s%s\"", quoteString, column.getName(), quoteString)));
         }
         return annotations;

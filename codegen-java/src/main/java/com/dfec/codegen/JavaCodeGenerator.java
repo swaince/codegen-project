@@ -11,12 +11,14 @@ import com.dfec.codegen.loader.TemplateLoader;
 import com.dfec.codegen.model.EntityModel;
 import com.dfec.codegen.model.MapperModel;
 import com.dfec.codegen.model.MapperXmlModel;
+import com.dfec.codegen.parser.ClasspathTemplatePathParser;
 import com.dfec.codegen.render.FreemarkerConfiguration;
 import com.dfec.codegen.render.FreemarkerTemplateRender;
 import com.dfec.codegen.render.TemplateRender;
 import com.dfec.codegen.resolver.EntityModelResolver;
 import com.dfec.codegen.resolver.MapperModelResolver;
 import com.dfec.codegen.resolver.MapperXmlModelResolver;
+import com.dfec.codegen.resolver.ModelResolver;
 import com.dfec.codegen.writer.CodeWriter;
 import com.dfec.codegen.writer.DefaultCodeWriter;
 
@@ -33,15 +35,6 @@ import java.util.stream.Collectors;
  */
 public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfig> {
 
-
-    private final EntityModelResolver entityResolver = new EntityModelResolver();
-    private final MapperModelResolver mapperResolver = new MapperModelResolver();
-    private final MapperXmlModelResolver mapperXmlResolver = new MapperXmlModelResolver();
-
-    private final TemplateLoader loader = new ClassLoaderTemplateLoader();
-    private final TemplateRender render = new FreemarkerTemplateRender(new FreemarkerConfiguration());
-    private final CodeWriter writer = new DefaultCodeWriter();
-
     @Override
     public boolean support(GenerationConfig config) {
         return config.getClass().isAssignableFrom(JavaGenerationConfig.class);
@@ -52,7 +45,7 @@ public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfi
         DatabaseConfig database = config.getDatabase();
         GenerationMetadataQuery metadataQuery = database.getMetadataQuery();
         if (metadataQuery == null) {
-            metadataQuery = new DefaultGenerationMetadataQuery(database);
+            metadataQuery = new DefaultGenerationMetadataQuery(config);
         }
 
         GenerationMetadata metadata = metadataQuery.query();
@@ -64,6 +57,13 @@ public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfi
 
     public List<JavaGenerationModel> metadataToJavaModel(GenerationMetadata metadata) {
 
+        JavaGenerationConfig config = metadata.getConfig();
+        ModelResolver<EntityModel> entityResolver = config.getEntityResolver();
+        ModelResolver<MapperModel> mapperResolver = config.getMapperResolver();
+        ModelResolver<MapperXmlModel> mapperXmlResolver = config.getMapperXmlResolver();
+        TemplateRender render = config.getRender();
+        ClasspathTemplatePathParser pathParser = new ClasspathTemplatePathParser(config.getLanguage().getName(), render.templateSuffix());
+
         List<Table> tables = metadata.getTables();
         return tables.stream().map(table -> {
             JavaGenerationModel model = new JavaGenerationModel();
@@ -73,13 +73,18 @@ public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfi
 
             EntityModel entity = entityResolver.resolve(model, table);
             model.setEntity(entity);
-            String code = getAndWriteCode(model, "templates/java/entity.java.ftl", entity.getOutputDir());
+            String entityCode = getAndWriteCode(model, pathParser.parse("entity"), entity.getOutputDir());
+            entity.setCode(entityCode);
 
             MapperModel mapper = mapperResolver.resolve(model, table);
             model.setMapper(mapper);
+            String mapperCode = getAndWriteCode(model, pathParser.parse("mapper"), mapper.getOutputDir());
+            mapper.setCode(mapperCode);
 
             MapperXmlModel mapperXml = mapperXmlResolver.resolve(model, table);
             model.setMapperXml(mapperXml);
+            String mapperXmlCode = getAndWriteCode(model, pathParser.parse("mapperXml"), mapperXml.getOutputDir());
+            mapperXml.setCode(mapperXmlCode);
 
             model.setTable(table);
             model.setTableName(table.getName());
@@ -97,10 +102,17 @@ public class JavaCodeGenerator extends AbstractCodeGenerator<JavaGenerationConfi
     }
 
     private String getAndWriteCode(JavaGenerationModel model, String templatePath, String writePath) {
-        try (FileOutputStream outputStream = new FileOutputStream(writePath)){
+        try {
+
+            GenerationMetadata metadata = model.getMetadata();
+            JavaGenerationConfig config = metadata.getConfig();
+            TemplateLoader loader = config.getLoader();
+            TemplateRender render = config.getRender();
+            CodeWriter writer = config.getWriter();
+
             String template = loader.load(templatePath);
             String code = render.render(template, model);
-            writer.write(code, outputStream);
+            writer.write(code, writePath);
             return code;
         } catch (Exception e) {
             throw new RuntimeException(e);

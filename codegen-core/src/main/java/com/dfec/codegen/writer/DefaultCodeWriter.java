@@ -16,8 +16,10 @@ public class DefaultCodeWriter implements CodeWriter {
     @Override
     public void write(String code, String path) throws IOException {
         Path filePath = Paths.get(path);
-        if (Files.exists(filePath)) {
+        if (!Files.exists(filePath)) {
             Files.createDirectories(filePath.getParent());
+        } else {
+
         }
         Files.write(filePath, code.getBytes());
     }

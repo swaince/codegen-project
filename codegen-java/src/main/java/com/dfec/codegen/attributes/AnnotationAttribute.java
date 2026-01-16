@@ -11,7 +11,7 @@ import java.util.List;
  * @since 2026/1/11
  */
 @Data
-public class AnnotationAttributes {
+public class AnnotationAttribute {
 
     /**
      * 短名称
@@ -33,12 +33,12 @@ public class AnnotationAttributes {
      */
     private List<String> additionalImports;
 
-    public AnnotationAttributes(String name, String className) {
+    public AnnotationAttribute(String name, String className) {
         this.name = name;
         this.className = className;
     }
 
-    public AnnotationAttributes(String name, String className, String values) {
+    public AnnotationAttribute(String name, String className, String values) {
         this.name = name;
         this.className = className;
         this.values = values;

@@ -1,6 +1,8 @@
 package com.dfec.codegen.db;
 
 import com.dfec.codegen.config.DatabaseConfig;
+import com.dfec.codegen.config.JavaGenerationConfig;
+import com.dfec.codegen.config.StrategyConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +22,9 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGenerationMetadataQuery.class);
 
-    private DatabaseConfig config;
+    private JavaGenerationConfig config;
 
-    public DefaultGenerationMetadataQuery(DatabaseConfig config) {
+    public DefaultGenerationMetadataQuery(JavaGenerationConfig config) {
         this.config = config;
     }
 
@@ -44,7 +46,8 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
 
     private Connection getConnection() {
         try {
-            return DriverManager.getConnection(config.getJdbcUrl(), config.getUsername(), config.getPassword());
+            DatabaseConfig database = config.getDatabase();
+            return DriverManager.getConnection(database.getJdbcUrl(), database.getUsername(), database.getPassword());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -52,6 +55,7 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
 
     private List<Table> getTables(Connection connection) {
         try {
+            StrategyConfig strategy = config.getStrategy();
             DatabaseMetaData metadata = connection.getMetaData();
             String catalog = connection.getCatalog();
             String schema = connection.getSchema();
@@ -60,6 +64,11 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
             List<Table> tables = new ArrayList<>();
             while (rs.next()) {
                 String name = rs.getString("TABLE_NAME");
+
+                if (isIgnoreTable(name)) {
+                    continue;
+                }
+
                 String type = rs.getString("TABLE_TYPE");
                 String remark = rs.getString("REMARKS");
 
@@ -76,6 +85,23 @@ public class DefaultGenerationMetadataQuery implements GenerationMetadataQuery {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean isIgnoreTable(String name) {
+        StrategyConfig strategy = config.getStrategy();
+        Set<String> includeTables = strategy.getIncludeTables();
+        Set<String> excludeTables = strategy.getExcludeTables();
+        if (excludeTables != null && !excludeTables.isEmpty()) {
+            if (excludeTables.contains(name)) {
+                return true;
+            }
+        }
+
+        if (includeTables == null || includeTables.isEmpty()) {
+            return false;
+        }
+
+        return !includeTables.contains(name);
     }
 
     private List<TableColumn> getTableColumns(Connection connection, Table table) {

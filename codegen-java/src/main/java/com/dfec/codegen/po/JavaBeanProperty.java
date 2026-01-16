@@ -1,11 +1,12 @@
 package com.dfec.codegen.po;
 
-import com.dfec.codegen.attributes.AnnotationAttributes;
+import com.dfec.codegen.attributes.AnnotationAttribute;
 import com.dfec.codegen.db.TableColumn;
 import com.dfec.codegen.types.JavaClass;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author: zhangth
@@ -21,9 +22,14 @@ public class JavaBeanProperty {
     private String remark;
 
     /**
+     * 注解属性
+     */
+    private List<AnnotationAttribute> annotationAttributes;
+
+    /**
      * 注解
      */
-    private List<AnnotationAttributes> annotations;
+    private Set<String> annotations;
 
     /**
      * 列信息
@@ -39,4 +45,9 @@ public class JavaBeanProperty {
      * setter 方法名
      */
     private String setterName;
+
+    /**
+     * jdbcType
+     */
+    private String jdbcType;
 }

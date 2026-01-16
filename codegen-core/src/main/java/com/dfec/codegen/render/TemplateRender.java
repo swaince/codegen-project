@@ -14,6 +14,19 @@ import java.io.IOException;
 public interface TemplateRender {
 
     /**
+     * 渲染器名称
+     * @return
+     */
+    String name();
+
+
+    /**
+     * 获取模板后缀
+     * @return
+     */
+    String templateSuffix();
+
+    /**
      * 渲染模板
      *
      * @param template 模板内容

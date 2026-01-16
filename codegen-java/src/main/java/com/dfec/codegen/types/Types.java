@@ -64,4 +64,13 @@ public enum Types {
     public Integer getValue() {
         return value;
     }
+
+    public static Types getByType(Integer value) {
+        for (Types type : values()) {
+            if (type.value.equals(value)) {
+                return type;
+            }
+        }
+        return null;
+    }
 }

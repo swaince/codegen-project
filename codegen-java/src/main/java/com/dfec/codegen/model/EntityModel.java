@@ -3,6 +3,7 @@ package com.dfec.codegen.model;
 import com.dfec.codegen.GenerationModel;
 import com.dfec.codegen.db.Table;
 import com.dfec.codegen.po.JavaBeanProperty;
+import com.dfec.codegen.types.JavaClass;
 import lombok.Data;
 
 import java.util.Arrays;
@@ -58,6 +59,40 @@ public class EntityModel implements GenerationModel {
      */
     private String outputDir;
 
+    /**
+     * 渲染后的代码
+     */
+    private String code;
+
+    /**
+     * 作者
+     */
+    private String author;
+
+    /**
+     * 创建时间
+     */
+    private String date;
+
+    /**
+     * 父类
+     */
+    private String superClass;
+
+    /**
+     * 是否使用泛型
+     */
+    private boolean generic;
+
+    /**
+     * 是否启用序列化
+     */
+    private boolean serializable;
+
+    /**
+     * 是否使用Lombok
+     */
+    private boolean useLombok;
 
     public void addImportPackage(String packageName) {
         this.imports.add(packageName);
@@ -75,5 +110,7 @@ public class EntityModel implements GenerationModel {
         this.annotations.addAll(Arrays.asList(annotations));
     }
 
-
+    public String getClassName() {
+        return String.format("%s.%s", packageName, name);
+    }
 }

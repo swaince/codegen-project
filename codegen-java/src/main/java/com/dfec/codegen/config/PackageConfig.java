@@ -1,6 +1,7 @@
 package com.dfec.codegen.config;
 
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 
 /**
@@ -9,21 +10,21 @@ import lombok.Data;
  * @since 2026/1/11
  */
 @Data
-@Builder
+@Builder(builderClassName = "Builder")
 public class PackageConfig {
 
-    @Builder.Default
+    @Default
     private String basePackage = "com.dfec";
     private String module;
-    @Builder.Default
+    @Default
     private String entity = "entity";
-    @Builder.Default
+    @Default
     private String mapper = "mapper";
-    @Builder.Default
+    @Default
     private String service = "service";
-    @Builder.Default
+    @Default
     private String controller = "controller";
-    @Builder.Default
+    @Default
     private String mapperXml = "mapper.xml";
 
     public String getModulePackage() {

@@ -1,6 +1,7 @@
 package com.dfec.codegen.resolver;
 
 import com.dfec.codegen.JavaGenerationModel;
+import com.dfec.codegen.Language;
 import com.dfec.codegen.db.Table;
 
 import java.nio.file.Paths;
@@ -14,8 +15,8 @@ public interface ModelResolver<T> {
 
     T resolve(JavaGenerationModel model, Table table);
 
-    default String getOutputDir(String base, String pkg, String filename) {
+    default String getOutputDir(String base, String pkg, Language language, String filename) {
         String[] dirs = pkg.split("\\.");
-        return Paths.get(base, "src").resolve("main").resolve(Paths.get("java", dirs)).resolve(filename).toString();
+        return Paths.get(base, "src").resolve("main").resolve(Paths.get(language.getName(), dirs)).resolve(filename + language.getExtension()).toString();
     }
 }

@@ -1,7 +1,7 @@
 package com.dfec.codegen.model;
 
 import com.dfec.codegen.GenerationModel;
-import com.dfec.codegen.attributes.AnnotationAttributes;
+import com.dfec.codegen.attributes.AnnotationAttribute;
 import lombok.Data;
 
 import java.util.*;
@@ -30,29 +30,68 @@ public class MapperModel implements GenerationModel {
     private String remark;
 
     /**
+     * 继承的父类
+     */
+    private String superClass;
+
+    /**
      * 导入包列表
      */
-    private Set<String> importPackages = new TreeSet<>();
+    private Set<String> imports = new TreeSet<>();
 
     /**
      * 注解列表
      */
-    private List<AnnotationAttributes> annotations = new LinkedList<>();
+    private List<AnnotationAttribute> annotationAttributes = new LinkedList<>();
+
+    /**
+     * 注解列表
+     */
+    private Set<String> annotations = new TreeSet<>();
+
+    /**
+     *  输出目录
+     */
+    private String  outputDir;
+
+    /**
+     * 代码
+     */
+    private String code;
+
+    /**
+     * 作者
+     */
+    private String author;
+
+    /**
+     * 创建时间
+     */
+    private String date;
+
+    /**
+     * 是否使用MybatisPlus
+     */
+    private boolean useMybatisPlus;
 
 
     public void addImportPackage(String importPackage) {
-        importPackages.add(importPackage);
+        imports.add(importPackage);
     }
 
     public void addImportPackages(Collection<String> importPackages) {
-        this.importPackages.addAll(importPackages);
+        this.imports.addAll(importPackages);
     }
 
-    public void addAnnotation(AnnotationAttributes annotation) {
-        annotations.add(annotation);
+    public void addAnnotationAttribute(AnnotationAttribute annotation) {
+        annotationAttributes.add(annotation);
     }
 
-    public void addAnnotations(Collection<AnnotationAttributes> annotations) {
-        this.annotations.addAll(annotations);
+    public void addAnnotationAttributes(Collection<AnnotationAttribute> annotations) {
+        this.annotationAttributes.addAll(annotations);
+    }
+
+    public String getClassName() {
+        return String.format("%s.%s", packageName, name);
     }
 }

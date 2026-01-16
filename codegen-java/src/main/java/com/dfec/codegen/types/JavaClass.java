@@ -15,6 +15,14 @@ public class JavaClass {
         this.className = className;
     }
 
+    public JavaClass(String className) {
+        this.className = className;
+        Class<?> typeClass = getTypeClass();
+        if (typeClass != null) {
+            this.name = typeClass.getSimpleName();
+        }
+    }
+
     public String getName() {
         return name;
     }
